@@ -2,13 +2,6 @@
 const themeToggleBtn = document.getElementById('theme-toggle');
 const htmlElement = document.documentElement;
 
-// Check saved theme on load
-if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-    htmlElement.classList.add('dark');
-} else {
-    htmlElement.classList.remove('dark');
-}
-
 themeToggleBtn.addEventListener('click', () => {
     htmlElement.classList.toggle('dark');
     if (htmlElement.classList.contains('dark')) {
@@ -273,4 +266,5 @@ function downloadFile(uint8Array, filename) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+
 }
