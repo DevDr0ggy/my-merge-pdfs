@@ -19,6 +19,13 @@
         tailwind.config = {
             darkMode: 'class',
         }
+
+        // Immediately check localStorage and system preference before rendering anything
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
     </script>
 
     <!-- Load pdf-lib -->
@@ -188,5 +195,6 @@
     <!-- Embedded JavaScript -->
     <script src="script.js"></script>
 </body>
+
 
 </html>
