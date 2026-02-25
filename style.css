@@ -1,0 +1,29 @@
+body {
+    font-family: 'Prompt', sans-serif;
+}
+
+.drag-over {
+    border-color: #3b82f6 !important;
+    background-color: #eff6ff !important;
+}
+
+html.dark .drag-over {
+    background-color: #1e3a8a !important;
+}
+
+.drag-handle {
+    cursor: grab;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+.sortable-ghost {
+    opacity: 0.4;
+    background-color: #f3f4f6;
+}
+
+html.dark .sortable-ghost {
+    background-color: #374151;
+}

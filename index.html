@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en" class="transition-colors duration-300">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimal PDF Merger (รวมไฟล์ PDF)</title>
+
+    <!-- Load Google Fonts (Prompt) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Configure Tailwind for Dark Mode -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+
+    <!-- Load pdf-lib -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+
+    <!-- Load SortableJS -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+    <!-- Embedded CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body
+    class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen flex items-center justify-center p-4 sm:p-8 relative transition-colors duration-300">
+
+    <!-- Theme Toggle Button -->
+    <button id="theme-toggle"
+        class="absolute top-4 right-4 sm:top-8 sm:right-8 p-3 rounded-full bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-all text-gray-600 dark:text-gray-300">
+        <!-- Sun Icon -->
+        <svg id="theme-toggle-light-icon" class="w-6 h-6 hidden dark:block" fill="none" stroke="currentColor"
+            viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z">
+            </path>
+        </svg>
+        <!-- Moon Icon -->
+        <svg id="theme-toggle-dark-icon" class="w-6 h-6 block dark:hidden" fill="none" stroke="currentColor"
+            viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+        </svg>
+    </button>
+
+    <!-- MAIN APP CONTAINER -->
+    <div
+        class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl p-6 sm:p-10 relative z-10 transition-colors duration-300 border border-gray-100 dark:border-gray-700">
+
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">Merge PDFs (รวมไฟล์ PDFs)</h1>
+            <p class="text-gray-500 dark:text-gray-400 text-xs sm:text-sm">Upload files, drag to reorder, and combine
+                them into one.<br><span class="opacity-75">(อัปโหลดไฟล์, ลากเพื่อจัดเรียง, และรวมเป็นไฟล์เดียว)</span>
+            </p>
+        </div>
+
+        <!-- Upload Zone -->
+        <div id="drop-zone"
+            class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-6 sm:p-8 text-center cursor-pointer transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 mb-6 relative">
+            <input type="file" id="file-input" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                accept=".pdf" multiple>
+            <svg class="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400 dark:text-gray-500 mb-3" fill="none"
+                stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+            </svg>
+            <p class="text-gray-600 dark:text-gray-300 font-medium text-sm sm:text-base">Tap to upload or drag &
+                drop<br><span class="font-normal text-sm">(คลิกเพื่ออัปโหลด หรือ ลากไฟล์มาวาง)</span></p>
+            <p class="text-gray-400 dark:text-gray-500 text-xs mt-2">PDF files only (รองรับเฉพาะไฟล์ PDF)</p>
+        </div>
+
+        <!-- File List Section -->
+        <div id="file-list-container" class="hidden mb-6">
+            <div class="flex justify-between items-end mb-3">
+                <h2 class="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-200">Selected Files /
+                    ไฟล์ที่เลือก <br><span class="text-gray-500 dark:text-gray-400 font-normal">(Drag <span
+                            class="opacity-50">☰</span> to reorder)</span>:</h2>
+                <button id="clear-all-btn"
+                    class="text-xs sm:text-sm text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-semibold underline decoration-red-300 dark:decoration-red-800 transition-colors">
+                    Clear All (ล้างทั้งหมด)
+                </button>
+            </div>
+
+            <ul id="file-list" class="space-y-2 mb-3"></ul>
+
+            <!-- Total File Size Calculator -->
+            <div
+                class="flex justify-end p-3 bg-blue-50 dark:bg-blue-900/30 rounded-xl border border-blue-100 dark:border-blue-800/50">
+                <span class="text-sm font-medium text-blue-800 dark:text-blue-300">
+                    Total Size (ขนาดรวม): <span id="total-size-display" class="font-bold">0.00 MB</span>
+                </span>
+            </div>
+        </div>
+
+        <!-- Filename Configuration -->
+        <div class="mb-6 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+            <h3 class="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">Output Filename
+                (ตั้งชื่อไฟล์ผลลัพธ์):</h3>
+
+            <div class="flex items-center space-x-6 mb-3">
+                <label
+                    class="flex items-center text-sm text-gray-700 dark:text-gray-300 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    <input type="radio" name="nameOption" value="default" id="radio-default"
+                        class="mr-2 w-4 h-4 text-blue-600 focus:ring-blue-500" checked>
+                    Default (ค่าเริ่มต้น)
+                </label>
+                <label
+                    class="flex items-center text-sm text-gray-700 dark:text-gray-300 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    <input type="radio" name="nameOption" value="custom" id="radio-custom"
+                        class="mr-2 w-4 h-4 text-blue-600 focus:ring-blue-500">
+                    Custom (กำหนดเอง)
+                </label>
+            </div>
+
+            <div id="custom-name-container" class="hidden">
+                <input type="text" id="custom-filename" placeholder="Enter file name (e.g., My_Report)"
+                    class="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">* .pdf extension will be added automatically
+                </p>
+            </div>
+        </div>
+
+        <!-- Merge Button -->
+        <button id="merge-btn"
+            class="w-full bg-black dark:bg-blue-600 text-white font-semibold py-3 px-4 rounded-xl shadow hover:bg-gray-800 dark:hover:bg-blue-700 transition duration-200 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed flex justify-center items-center"
+            disabled>
+            <svg id="merge-spinner" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden"
+                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                </path>
+            </svg>
+            <span id="merge-btn-text">Merge PDFs (รวมไฟล์)</span>
+        </button>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="confirm-modal"
+        class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden z-50 px-4 transition-opacity duration-300">
+        <div
+            class="bg-white dark:bg-gray-800 rounded-2xl p-6 sm:p-8 w-full max-w-sm shadow-2xl border border-gray-100 dark:border-gray-700">
+            <div class="flex items-center mb-4">
+                <div class="bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-full p-2 mr-3">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                        </path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white" id="confirm-title">Confirm Removal</h3>
+            </div>
+            <p class="text-gray-600 dark:text-gray-300 text-sm mb-6" id="confirm-message"></p>
+            <div class="flex justify-end space-x-3">
+                <button id="cancel-btn"
+                    class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 font-medium text-sm transition-colors">Cancel
+                    (ยกเลิก)</button>
+                <button id="confirm-delete-btn"
+                    class="px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 font-medium text-sm shadow-sm transition-colors">Remove
+                    (ลบไฟล์)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Modal -->
+    <div id="alert-modal"
+        class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden z-50 px-4 transition-opacity duration-300">
+        <div
+            class="bg-white dark:bg-gray-800 rounded-2xl p-6 sm:p-8 w-full max-w-sm shadow-2xl border border-gray-100 dark:border-gray-700 text-center">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Notification (แจ้งเตือน)</h3>
+            <p id="alert-message" class="text-gray-600 dark:text-gray-300 text-sm mb-6"></p>
+            <button id="alert-ok-btn"
+                class="w-full py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium text-sm shadow-sm transition-colors">OK
+                (ตกลง)</button>
+        </div>
+    </div>
+
+    <!-- Embedded JavaScript -->
+    <script src="script.js"></script>
+</body>
+
+</html>
